@@ -1,0 +1,520 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd  http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+    <http:listener-config name="fetch-scheme-details-haseduid-kutumba-httpListenerConfig">
+        <http:listener-connection host="0.0.0.0" port="8082" readTimeout="3000000" />
+    </http:listener-config>
+    <apikit:config name="fetch-scheme-details-haseduid-kutumba-config" api="fetch-scheme-details-haseduid-kutumba.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <http:request-config name="HTTP_Request_configuration-schemeDetails" doc:name="HTTP Request configuration" doc:id="6ddb42da-df07-46a3-96ab-0bc410c5bce2">
+        <http:request-connection protocol="HTTPS" host="kutumba-services.karnataka.gov.in" />
+    </http:request-config>
+    <db:config name="Database_Config" doc:name="Database Config" doc:id="084410ad-b48c-47cb-8c40-6c3ce27ad651">
+        <db:my-sql-connection host="172.31.41.232" port="3306" user="root" />
+    </db:config>
+    <flow name="fetch-scheme-details-haseduid-kutumba-main">
+        <http:listener config-ref="fetch-scheme-details-haseduid-kutumba-httpListenerConfig" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus]">
+                <http:body><![CDATA[#[payload]]]></http:body>
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:error-response>
+        </http:listener>
+        <logger level="INFO" doc:name="Logger" doc:id="ec147c5a-5c98-4490-84d4-5253461c2d09" message="&gt;&gt;&gt;&gt;Main-Flow-Started" />
+        <set-variable value="#[payload]" doc:name="Set Variable" doc:id="b297be80-8743-4ddd-b1cc-6f7c16a10327" variableName="originalpayload" />
+        <apikit:router config-ref="fetch-scheme-details-haseduid-kutumba-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:BAD_REQUEST">
+                <ee:transform xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Bad request"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">400</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED">
+                <ee:transform xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Method not allowed"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">405</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_ACCEPTABLE">
+                <ee:transform xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not acceptable"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">406</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
+                <ee:transform xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Unsupported media type"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">415</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_IMPLEMENTED">
+                <ee:transform xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not Implemented"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">501</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="fetch-scheme-details-haseduid-kutumba-console">
+        <http:listener config-ref="fetch-scheme-details-haseduid-kutumba-httpListenerConfig" path="/console/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="fetch-scheme-details-haseduid-kutumba-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform xsi:schemaLocation=" http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="post:\getSchemeDetails:application\json:fetch-scheme-details-haseduid-kutumba-config">
+        <scatter-gather doc:name="Scatter-Gather" doc:id="68736043-cfff-4dd7-b940-4b8c5c63f0f4">
+            <route>
+                <logger level="INFO" doc:name="Logger" doc:id="bd42e253-5744-4bfc-9d56-18e6a4cb6564" message="&gt;&gt;&gt;&gt;GetSchemeDetails flow has Started&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;" />
+                <flow-ref doc:name="Flow Referring Client Validation and Time Validation" doc:id="7db6fb69-cadb-4953-8c9f-5ab1886db689" name="client-and-time-validation" />
+                <set-variable value="getschemeskutumba" doc:name="Defining The API Name" doc:id="e3084c3a-d200-462e-ae99-9039b9ad6d36" variableName="ApiName" />
+                <logger level="INFO" doc:name="Start fetching API-id by API Name" doc:id="568b7956-70c7-4e93-9607-5fecf9bd03b0" message="Start-Fetching-the-Api-ID Based On the Api-Name" />
+                <flow-ref doc:name="Flow Referring to CommonFlow-Fetch-ApiId-ApiName" doc:id="c3b47a63-dc8d-4e7e-9abf-4b883be7d3ba" name="CommonFlow-Fetch-ApiId-ApiName" />
+                <try doc:name="Try" doc:id="8e2874d7-a303-4e49-a610-b352bd0e379e">
+                    <ee:transform doc:name="client and API validation step" doc:id="718dc4e9-ca6e-47ff-92fe-11e7cef43534">
+                        <ee:message>
+                            <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+"validator": (((vars.APIID splitBy  ",")[0 to -1]) contains vars.CapturedDataBaseAPIID)as String
+}]]></ee:set-payload>
+                        </ee:message>
+                    </ee:transform>
+                    <error-handler>
+                        <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="7143201f-6e49-47a9-8e4f-468ac01956ba">
+                            <raise-error doc:name="Raise error" doc:id="78573085-7f60-485b-9a7d-2729d7f0dbaf" description="&quot;The Client Has No Permission To invoke this APi&quot;" type="ANY:SECURITY" />
+                            <ee:transform doc:name="Transform Message" doc:id="eafbf701-d282-4a03-a947-7d49f9ba3040">
+                                <ee:message>
+                                    <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Failure-Description": "The Client Has No Permission To invoke this APi"
+}]]></ee:set-payload>
+                                </ee:message>
+                            </ee:transform>
+                        </on-error-propagate>
+                    </error-handler>
+                </try>
+                <flow-ref doc:name="Flow Reference for API-Code and ClientCode Validation" doc:id="a12734f3-76ba-41ed-b057-bb7934726e2b" name="common-clientcode-ApiCode-validation" />
+                <ee:transform doc:name="capturing the Payload instants" doc:id="52e9e2b2-997a-46de-8ab1-0d7823ff1544">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "APIVersion": "1.0",
+  "ClientCode": vars.originalpayload.ClientCode,
+  "benefhasheduid": vars.originalpayload.benefhasheduid,
+  "Request_ID": "1234567890"
+}]]></ee:set-payload>
+                    </ee:message>
+                </ee:transform>
+                <logger level="INFO" doc:name="Tracing wheter payload is captured" doc:id="89dd65b9-f60c-48a1-b22a-eae9d59fd9db" message="#[payload]" />
+                <ee:transform doc:name="Variable Hashmac" doc:id="8dd3f8a7-8a59-4022-9abb-86e99ff014c3">
+                    <ee:message />
+                    <ee:variables>
+                        <ee:set-variable variableName="Hashmac"><![CDATA[%dw 2.0
+import HMACBinary from dw::Crypto
+import * from dw::core::Binaries
+output application/json
+var key = "C686FBC8-6A3F-4C92-A6FD-651E3A41BA3D"
+var message = (payload.ClientCode ++ "___"++ payload.benefhasheduid)as String
+---
+{
+  "HMACBinary" : toBase64(HMACBinary(key as Binary, message as Binary, "HmacSHA256") as Binary)
+}]]></ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+                <logger level="INFO" doc:name="Tracing HashMac" doc:id="3be43fe2-7271-4bd4-b85c-1772e905080a" message="Tracing the Hashmac #[vars.Hashmac.HMACBinary]" />
+                <ee:transform doc:name="Setting payload to invoke Kutumba-Scheme-Details" doc:id="2e5a743e-aea1-4115-8a9f-17bf83e40e19">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"APIVersion": payload.APIVersion,
+	"ClientCode": payload.ClientCode,
+	"benefhasheduid": payload.benefhasheduid,
+	"HashedMac": vars.Hashmac.HMACBinary,
+	"Request_ID": payload.Request_ID
+}]]></ee:set-payload>
+                    </ee:message>
+                </ee:transform>
+                <try doc:name="Try" doc:id="722a4b62-5f36-4d00-a1a7-c6c31b47b0f6">
+                    <http:request method="POST" doc:name="Invoke getSchemes-kutumba" doc:id="2eab27d2-61de-4b1c-a090-e3dc825c64ba" config-ref="HTTP_Request_configuration-schemeDetails" path="/testfidapienc1/GetSchemeDtls" outputMimeType="application/json">
+                        <http:body><![CDATA[#[%dw 2.0
+output application/json
+---
+{
+	"APIVersion": payload.APIVersion,
+	"ClientCode": payload.ClientCode,
+	"benefhasheduid": payload.benefhasheduid,
+	"HashedMac": vars.Hashmac.HMACBinary,
+	"Request_ID": payload.Request_ID
+}]]]></http:body>
+                        <http:headers><![CDATA[#[output application/java
+---
+{
+	"Accept" : "application/json",
+	"Content-Type" : "application/json"
+}]]]></http:headers>
+                    </http:request>
+                    <error-handler>
+                        <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="6b9e330a-fd15-4e38-8d6d-52e529b19d28" type="HTTP:NOT_FOUND">
+                            <raise-error doc:name="Raise error" doc:id="3c90be1c-0b92-4b3b-b2de-b403b03ef419" type="MULE:CONNECTIVITY" description="There is a Connectivity issue while invoking the  Getschemes Api" />
+                        </on-error-propagate>
+                    </error-handler>
+                </try>
+                <choice doc:name="Choice" doc:id="bcb6155b-c1a4-4420-a278-5dc149556226">
+                    <when expression="#[payload.StatusText matches &quot;Sucess&quot;]">
+                        <ee:transform doc:name="Transform Message" doc:id="da450da7-9b46-41ee-b59c-b2efe7e8c525">
+                            <ee:message>
+                                <ee:set-payload><![CDATA[%dw 2.0
+import java!com::fivestar::crypto::Decrypt
+output application/java
+---
+read(Decrypt::decrypt(payload.EncResultData as String),"application/java")]]></ee:set-payload>
+                            </ee:message>
+                        </ee:transform>
+                        <set-payload value="#[payload]" doc:name="Set Payload" doc:id="0f6e3166-f1e0-4ced-9f1d-3848559cd83f" mimeType="application/json" />
+                        <logger level="INFO" doc:name="Logger" doc:id="8f0679ef-aed8-42f5-947e-1219ffa2d064" message="&gt;&gt;&gt;End of the Scheme Details Decryption" />
+                    </when>
+                    <otherwise>
+                        <logger level="INFO" doc:name="Logger" doc:id="0acace84-eac7-4a3a-8b52-692751ec19d7" message="Scheme-Details-Unable to Fetch&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;" />
+                    </otherwise>
+                </choice>
+            </route>
+            <route>
+                <logger level="INFO" doc:name="Audit-Log-Flow-Started" doc:id="6fb75e58-7cfd-458f-8a7e-da8bc835f023" message="&gt;&gt;&gt;&gt;AuditLog Flow Started&gt;&gt;&gt;&gt;&gt;&gt;" />
+                <ee:transform doc:name="defining Publisher and subscriber" doc:id="9a6fcf83-5b52-4aaf-b96c-905b5b9d86be">
+                    <ee:message />
+                    <ee:variables>
+                        <ee:set-variable variableName="Appname"><![CDATA['Kutumba-API']]></ee:set-variable>
+                        <ee:set-variable variableName="publisher"><![CDATA['Get-Scheme-Details-API']]></ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+                <async doc:name="Async" doc:id="1a49c585-0275-4ef5-9842-3bcbb0d9883a">
+                    <flow-ref doc:name="Flow Reference" doc:id="5b4e37b3-3913-4ceb-bd8e-86bf7fd31868" name="common_audit_Sub_Flow" />
+                </async>
+            </route>
+        </scatter-gather>
+        <ee:transform doc:name="Capturing the getSchemes response" doc:id="735c91f2-1e4e-4048-8d4e-4b16834f8672">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload[0].payload]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+        <set-variable value="#[payload]" doc:name="API-Response" doc:id="ce2f9d9a-71a5-474d-9656-19529ed19579" variableName="APiResponse" />
+        <db:select doc:name="Select from datafeilds" doc:id="7af03a1b-8eca-41a8-bb49-adddb9097a57" config-ref="Database_Config">
+            <db:sql><![CDATA[select * from esb_schema.datafeilds where ClientId=:clientid]]></db:sql>
+            <db:input-parameters><![CDATA[#[{
+	"clientid" : vars.originalpayload.ClientSecretCode
+}]]]></db:input-parameters>
+        </db:select>
+        <try doc:name="Try" doc:id="95b362c1-4864-485b-9d7e-ee2d169dba74">
+            <ee:transform doc:name="Database-Feilds" doc:id="375e9cc9-b65f-46c8-91d7-69fda8e3a623">
+                <ee:message>
+                    <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Client_id-DB": payload.ClientId reduce $,
+	"FeildList": ((payload.OutputFeilds reduce $)splitBy ",")[0 to -1] 
+}]]></ee:set-payload>
+                </ee:message>
+            </ee:transform>
+            <ee:transform doc:name="Feilds-Exposure-Control-Logic-V3" doc:id="af88be5d-64b1-4c16-86b2-f81419777cfd">
+                <ee:message>
+                    <ee:set-payload><![CDATA[%dw 2.0
+output application/json skipNullOn="everywhere"
+var APiResponse = vars.APiResponse
+fun check(respData)= if((respData matches "Resident_ID") and (payload.FeildList contains "Resident_ID")) (APiResponse.ResultDataList reduce $).Resident_ID 
+else if((respData matches "Benf_Name") and (payload.FeildList contains "Benf_Name")) (APiResponse.ResultDataList reduce $).Benf_Name 
+else if((respData matches "District_Name") and (payload.FeildList contains "District_Name")) (APiResponse.ResultDataList reduce $).District_Name 
+else if((respData matches "Taluk_Name") and (payload.FeildList contains "Taluk_Name")) (APiResponse.ResultDataList reduce $).Taluk_Name 
+else if((respData matches "Dept_Name") and (payload.FeildList contains "Dept_Name")) (APiResponse.ResultDataList reduce $).Dept_Name 
+else if((respData matches "Scheme_Name") and (payload.FeildList contains "Scheme_Name")) (APiResponse.ResultDataList reduce $).Scheme_Name 
+else if((respData matches "Amount_Received") and (payload.FeildList contains "Amount_Received")) (APiResponse.ResultDataList reduce $).Amount_Received 
+else if((respData matches "Payment_Received_Year") and (payload.FeildList contains "Payment_Received_Year")) (APiResponse.ResultDataList reduce $).Payment_Received_Year 
+else null
+---
+{
+    StatusCode: APiResponse.StatusCode,
+    StatusText: APiResponse.StatusText,
+    Response_ID: APiResponse.Response_ID,
+    Request_ID: APiResponse.Request_ID,
+    ResultDataList: [
+        {
+            "Resident_ID": check("Resident_ID"),
+            "Benf_Name": check("Benf_Name"),
+            "District_Name": check("District_Name"),
+            "Taluk_Name": check("Taluk_Name"),
+            "Dept_Name": check("Dept_Name"),
+            "Scheme_Name": check("Scheme_Name"),
+            "Amount_Received": check("Amount_Received"),
+            "Payment_Received_Year": check("Payment_Received_Year")
+        }
+    ] 
+}]]></ee:set-payload>
+                </ee:message>
+            </ee:transform>
+            <error-handler>
+                <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="be051731-2b16-4236-99d5-af10b350aa9c">
+                    <raise-error doc:name="Raise error" doc:id="7c415fac-4cb9-4b03-b0ac-8099e9d1fd9f" type="ANY:SECURITY" description="There is No-Feilds-Assosciated with this Client:::" />
+                    <ee:transform doc:name="Transform Message" doc:id="b60f68d2-4f93-427b-abb3-0ae18d229b1b">
+                        <ee:message>
+                            <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Failure-Description": "There is No-Feilds-Assosciated with this Client-Id"
+}]]></ee:set-payload>
+                        </ee:message>
+                    </ee:transform>
+                </on-error-propagate>
+            </error-handler>
+        </try>
+        <logger level="INFO" doc:name="Logger" doc:id="57afccdf-7440-47b5-9ff5-a6275c03b5ef" message="THE PAYLOAD AFTER ALL THE VALIDATIONS::::AND SPECIFIC FEILDS TO THE SPECIFIC CLIENT   #[vars.originalpayload.ClientSecretCode]   IS #[payload]" />
+        <error-handler>
+            <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="2d40e6a2-b896-4eb1-b5b6-a1e6699e7df7" type="ANY">
+                <ee:transform doc:name="Transform Message" doc:id="f4d6009d-0383-45c0-855f-16299a85d8f9">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"error": error.description
+}]]></ee:set-payload>
+                    </ee:message>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="common-clientcode-ApiCode-validation" doc:id="5aeb5940-4192-425d-b092-364bdaf3e294">
+        <logger level="INFO" doc:name="Logger" doc:id="c0982e75-1bdc-43b8-9415-856191ec1636" message="The validator response is #[payload.validator]" />
+        <choice doc:name="Choice" doc:id="36799069-914e-4d63-b9ca-183a495e55da">
+            <when expression="#[payload.validator == &quot;true&quot;]">
+                <logger level="INFO" doc:name="Logger" doc:id="ea7139d3-3ee5-4d81-b30b-f66d6c6d2bd6" message="The API-ID Got Validated With the Client-ID:::::::" />
+            </when>
+            <otherwise>
+                <try doc:name="Try" doc:id="df9c7268-e391-4d4d-b393-727bc88dfdd3">
+                    <raise-error doc:name="Raise error" doc:id="5f385aab-4d96-4f4b-ab51-80e83b86369d" type="ANY:SECURITY" description="The Client Has No Permission To Make use of  this APi" />
+                    <error-handler>
+                        <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="8da04189-041c-4f34-82cf-d4654989cb7a" type="ANY">
+                            <ee:transform doc:name="Transform Message" doc:id="69a85617-3d32-4352-b09e-66e50d982c01">
+                                <ee:message>
+                                    <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Failure-Description": "The Client Has No Permission To make use of this APi"
+}]]></ee:set-payload>
+                                </ee:message>
+                                <ee:variables>
+                                    <ee:set-variable variableName="httpStatus"><![CDATA[401]]></ee:set-variable>
+                                </ee:variables>
+                            </ee:transform>
+                        </on-error-propagate>
+                    </error-handler>
+                </try>
+            </otherwise>
+        </choice>
+    </flow>
+    <flow name="client-and-time-validation" doc:id="499a0102-abfb-47a5-a610-c1a9ab6ff267">
+        <db:select doc:name="Select clients" doc:id="93e02629-7ec6-4709-a3a0-4c46ec8ee4a1" config-ref="Database_Config">
+            <db:sql><![CDATA[select * from esb_schema.clients WHERE ClientId =:Clientsecret]]></db:sql>
+            <db:input-parameters><![CDATA[#[{
+	"Clientsecret": payload.ClientSecretCode
+}]]]></db:input-parameters>
+        </db:select>
+        <set-variable value="#[payload.APIID[0]]" doc:name="Set Variable" doc:id="189aac38-9dd6-4d22-bc94-3970b470388c" variableName="APIID" />
+        <ee:transform doc:name="client validation" doc:id="a03eb41f-11e0-4485-88f0-5f4fda46846b">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload reduce $]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+        <choice doc:name="Choice" doc:id="dc3d6de6-1599-4611-a18e-42c47c295844">
+            <when expression="#[payload != null]">
+                <logger level="INFO" doc:name="Logger" doc:id="5dc98cdd-d6c4-4ce2-a110-1a1d324e97fc" message="flow&gt;&gt;&gt;routing Continues" />
+            </when>
+            <otherwise>
+                <try doc:name="Try" doc:id="ef1832b6-942c-4573-a287-c332911384c0">
+                    <raise-error doc:name="Raise error" doc:id="ddbac1ca-4072-4752-96ab-6e9eea3188a1" type="ANY:SECURITY" description="The Provided Client Secret  is Not Valid:::::" />
+                    <error-handler>
+                        <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="f0d1ac60-a786-4e05-b5b2-bb73c52b75bb">
+                            <ee:transform doc:name="Transform Message" doc:id="d800172c-da75-4683-b4e0-eebf0147156d">
+                                <ee:message>
+                                    <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Failure-Description": "The Provided Client Secret  is Not Valid:::::"
+}]]></ee:set-payload>
+                                </ee:message>
+                            </ee:transform>
+                        </on-error-propagate>
+                    </error-handler>
+                </try>
+            </otherwise>
+        </choice>
+        <logger level="INFO" doc:name="Logger" doc:id="cf9d5693-3223-4f61-a799-3f2c2c3ae817" message="Time Validation Had Started and the StartTime and EndTime Assosciated with the Client are  StartTime === #[payload.StartTime]  EndTime ===#[payload.EndTime]" />
+        <ee:transform doc:name="Time-Validation" doc:id="1e561706-197f-4ded-a5c1-536470966d9a">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+var startTime = payload.StartTime as Time
+var endTime = payload.EndTime as Time
+
+fun validate(time: Time) =
+  (((time - startTime) as Number > 0) and ((endTime - time) as Number > 0))
+output application/json  
+---
+{
+  validation: validate((now() >> "IST") [11 to 18] as Time),
+  startTime: startTime ,
+  endTime: endTime ,
+  IST: (now() >> "IST") [11 to 18],
+  istastime: (now() >> "IST") [11 to 18] as Time
+
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+        <ee:transform doc:name="boolean to string" doc:id="ab428df7-7f41-4128-ae4a-fbe2f3d5d27f">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"validationvalue" : payload.validation as String
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+        <choice doc:name="Choice" doc:id="e7fa93e2-7750-4b3e-90ff-0be3ecc0f4a2">
+            <when expression="#[payload.validationvalue == &quot;true&quot;]">
+                <logger level="INFO" doc:name="Logger" doc:id="deb53bcd-daa1-4cf2-b708-72bbca1d5b3e" message="Time-Validation is Successful:::" />
+            </when>
+            <otherwise>
+                <try doc:name="Try" doc:id="c632e7c3-7153-44ad-85f3-f0b4755260a5">
+                    <raise-error doc:name="Raise error" doc:id="0207dbe5-b9b4-43e4-aa41-3293eaa40d39" type="ANY:SECURITY" description="Access Denied::-&gt; Unpermitted Time intervals::::" />
+                    <error-handler>
+                        <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="414cc114-cf90-47b7-801f-714194546206">
+                            <ee:transform doc:name="Transform Message" doc:id="463353a6-fe6e-422a-863d-fea6302d5efe">
+                                <ee:message>
+                                    <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Failure-Description": "Access Denied::-> UnPermitted Time intervals."
+}]]></ee:set-payload>
+                                </ee:message>
+                            </ee:transform>
+                        </on-error-propagate>
+                    </error-handler>
+                </try>
+            </otherwise>
+        </choice>
+        <logger level="INFO" doc:name="Logger" doc:id="105b1ae5-4782-4b8c-ad4b-04a0bf085d78" message="Done With Both Client and Time Validations" />
+    </flow>
+    <flow name="CommonFlow-Fetch-ApiId-ApiName" doc:id="2214f5cb-dd1e-447a-849a-3cd460cb3e25">
+        <logger level="INFO" doc:name="Logger" doc:id="22bad581-7f55-4d5c-9224-2a82bbd9b254" message="Start Fetching-APiID-By-API-Name Flow::::::&gt;&gt;&gt;From the Database" />
+        <db:select doc:name="Select API-id" doc:id="5f580378-de3a-4738-a9a8-ff1bf7c89e01" config-ref="Database_Config">
+            <db:sql><![CDATA[select * from esb_schema.ApiMaster WHERE ApiName =:APINAME]]></db:sql>
+            <db:input-parameters><![CDATA[#[{
+	"APINAME": vars.ApiName
+}]]]></db:input-parameters>
+        </db:select>
+        <set-variable value="#[payload[0].APIID]" doc:name="API-id-capturing" doc:id="fc56f6a8-6dd0-49f6-9258-c55993d97981" variableName="CapturedDataBaseAPIID" />
+        <logger level="INFO" doc:name="Logger" doc:id="08d3df25-55c8-4027-ac51-df7dd7ae3d5f" message="API-id is fetched now From the dataBase:::The result from the Database is #[payload]" />
+        <error-handler>
+            <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="1e121b5a-5c5f-4494-b967-98a1f93e12d0" type="ANY">
+                <ee:transform doc:name="Transform Message" doc:id="0301ff05-6d8c-4300-909b-357f36709796">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"error": error.description,
+	"failingComponent":  error.failingComponent,
+	"errorDetailed-Description":  error.detailedDescription
+}]]></ee:set-payload>
+                    </ee:message>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+</mule>

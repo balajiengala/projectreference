@@ -1,0 +1,4 @@
+%dw 2.0
+
+type auto_2214f5cb_dd1e_447a_849a_3cd460cb3e25_Output_Payload = Array<{|  APIID?: String,   APIName?: String|}>
+

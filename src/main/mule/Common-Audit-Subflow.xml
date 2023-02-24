@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:jms="http://www.mulesoft.org/schema/mule/jms"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd 
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd">
+	<jms:config name="JMS_Config1" doc:name="JMS Config" doc:id="969670f3-6d94-4b7c-bfb4-86539158f4f1" >
+		<jms:active-mq-connection username="admin" password="admin" >
+			<jms:factory-configuration brokerUrl="tcp://10.10.29.247:61616" />
+		</jms:active-mq-connection>
+	</jms:config>
+	<sub-flow name="common_audit_Sub_Flow" doc:id="70275323-5de6-477e-8bb5-407cfd8d937f" >
+		<set-variable value="#[payload]" doc:name="Original_payload_Set Variable" doc:id="623cce21-23e9-43f0-bd87-8acb0ab5d093" variableName="OriginalPayload"/>
+		<set-variable value="#[correlationId]" doc:name="correlationid_Set Variable" doc:id="17b6abb9-bfc8-4bce-8451-3d3e1c1c5356" variableName="corelation_id" />
+		<set-variable value="_API" doc:name="API_string" doc:id="0da4c8ee-cd56-45be-bc86-5cd983455e76" variableName="API"/>
+		<set-variable value="_Audit-Flow" doc:name="auditflow_string" doc:id="21a5bafe-bf5a-45f0-aae1-c49bd9c84bcf" variableName="audit_flow"/>
+		<ee:transform doc:name="Transform Message" doc:id="482013f6-d263-48fb-9f6e-bb42bf8acd2b">
+			<ee:message>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="vAuditVariables"><![CDATA[%dw 2.0
+output application/json
+---
+{
+	corelation_id : vars.corelation_id,
+	log_message : "ENTRY",
+	Apisubscriber : vars.AppName,
+	Apipublisher : vars.publisher,
+	LastaccessTime: attributes.lastAccessTime,
+	log_type : "INFO",
+	Api_Access_Time : now() as String {format : "yyyy-MM-dd HH:mm:ss.SSS"}
+	
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<set-payload value="#[vars.vAuditVariables]" doc:name="Set Payload" doc:id="c012bae5-1d4d-47a0-85ff-907eec457b38" mimeType="application/json" />
+		<logger level="INFO" doc:name="Logger" doc:id="ff78163b-6b27-40a0-9d78-fb5383d852f0" message="#[payload]" />
+		<async doc:name="Async" doc:id="47e8f480-8a9d-4e37-a8cb-0edecfcb9712">
+			<jms:publish doc:name="Publish" doc:id="3760f4bd-fa43-4256-a4f3-d2b84f430943" config-ref="JMS_Config1" destination="ESB-Mahithi-kanaja"/>
+
+		</async>
+		<set-payload value="#[vars.OriginalPayload]" doc:name="Set Payload" doc:id="6b2e31c3-50f9-4894-8623-211efabcefcc" />
+	
+</sub-flow></mule>

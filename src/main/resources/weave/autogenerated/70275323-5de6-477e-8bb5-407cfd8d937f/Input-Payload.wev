@@ -1,0 +1,8 @@
+%dw 2.0
+
+type auto_70275323_5de6_477e_8bb5_407cfd8d937f_Input_Payload = {
+  ClientCode: String, 
+  benefhasheduid: String, 
+  _?: Any
+}
+
